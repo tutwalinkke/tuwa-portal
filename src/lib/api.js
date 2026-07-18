@@ -1,0 +1,43 @@
+import axios from 'axios';
+
+const IDENTITY_URL = 'https://identity.tuwalink.com/api/v1';
+const NOC_URL = 'https://noc.tuwalink.com/api/v1';
+
+export function getToken() {
+  return localStorage.getItem('tuwa_token');
+}
+
+export function setToken(token) {
+  localStorage.setItem('tuwa_token', token);
+}
+
+export function clearToken() {
+  localStorage.removeItem('tuwa_token');
+}
+
+function authHeaders() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export const identityApi = {
+  login: (email, password) =>
+    axios.post(`${IDENTITY_URL}/login`, { email, password }),
+
+  me: () =>
+    axios.get(`${IDENTITY_URL}/me`, { headers: authHeaders() }),
+
+  logout: () =>
+    axios.post(`${IDENTITY_URL}/logout`, {}, { headers: authHeaders() }),
+};
+
+export const nocApi = {
+  dashboard: () =>
+    axios.get(`${NOC_URL}/dashboard`, { headers: authHeaders() }),
+
+  devices: () =>
+    axios.get(`${NOC_URL}/devices`, { headers: authHeaders() }),
+
+  billingStatus: () =>
+    axios.get(`${NOC_URL}/billing/status`, { headers: authHeaders() }),
+};
