@@ -29,6 +29,9 @@ export const identityApi = {
 
   logout: () =>
     axios.post(`${IDENTITY_URL}/logout`, {}, { headers: authHeaders() }),
+
+  activity: () =>
+    axios.get(`${IDENTITY_URL}/activity`, { headers: authHeaders() }),
 };
 
 export const nocApi = {
@@ -55,4 +58,7 @@ export const nocApi = {
 
   createCustomer: (data) =>
     axios.post(`${NOC_URL}/customers`, data, { headers: authHeaders() }),
+
+  activity: () =>
+    axios.get(`${NOC_URL}/activity`, { headers: authHeaders() }),
 };

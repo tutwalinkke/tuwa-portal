@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Subnets from './pages/Subnets';
 import Billing from './pages/Billing';
 import Customers from './pages/Customers';
+import Activity from './pages/Activity';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -59,6 +60,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Billing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity"
+            element={
+              <ProtectedRoute>
+                <Activity />
               </ProtectedRoute>
             }
           />
