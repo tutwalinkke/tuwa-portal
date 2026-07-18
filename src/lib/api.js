@@ -40,4 +40,13 @@ export const nocApi = {
 
   billingStatus: () =>
     axios.get(`${NOC_URL}/billing/status`, { headers: authHeaders() }),
+
+  subnets: () =>
+    axios.get(`${NOC_URL}/subnets`, { headers: authHeaders() }),
+
+  subnet: (id) =>
+    axios.get(`${NOC_URL}/subnets/${id}`, { headers: authHeaders() }),
+
+  invoices: () =>
+    axios.get(`${NOC_URL}/invoices`, { headers: authHeaders() }),
 };
