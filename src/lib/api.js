@@ -49,4 +49,10 @@ export const nocApi = {
 
   invoices: () =>
     axios.get(`${NOC_URL}/invoices`, { headers: authHeaders() }),
+
+  customers: () =>
+    axios.get(`${NOC_URL}/customers`, { headers: authHeaders() }),
+
+  createCustomer: (data) =>
+    axios.post(`${NOC_URL}/customers`, data, { headers: authHeaders() }),
 };

@@ -36,6 +36,7 @@ export default function Layout({ children }) {
           </div>
           <nav className="flex items-center gap-1">
             <NavItem to="/dashboard">Dashboard</NavItem>
+            <NavItem to="/customers">Customers</NavItem>
             <NavItem to="/subnets">Subnets</NavItem>
             <NavItem to="/billing">Billing</NavItem>
           </nav>
