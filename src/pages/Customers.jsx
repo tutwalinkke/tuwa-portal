@@ -78,8 +78,9 @@ export default function Customers() {
         <form onSubmit={handleSubmit} className="bg-ink-900 border border-ink-800 rounded-lg p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Name</label>
+              <label htmlFor="customer-name" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Name</label>
               <input
+                id="customer-name"
                 type="text"
                 required
                 value={formData.name}
@@ -88,8 +89,9 @@ export default function Customers() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Phone</label>
+              <label htmlFor="customer-phone" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Phone</label>
               <input
+                id="customer-phone"
                 type="text"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -97,8 +99,9 @@ export default function Customers() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Email</label>
+              <label htmlFor="customer-email" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Email</label>
               <input
+                id="customer-email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -106,8 +109,9 @@ export default function Customers() {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Service Address</label>
+              <label htmlFor="customer-address" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Service Address</label>
               <input
+                id="customer-address"
                 type="text"
                 value={formData.service_address}
                 onChange={(e) => setFormData({ ...formData, service_address: e.target.value })}
