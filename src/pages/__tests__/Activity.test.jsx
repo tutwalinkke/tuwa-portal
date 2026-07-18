@@ -60,8 +60,12 @@ describe('Activity', () => {
     });
 
     expect(screen.getByText('User logged in')).toBeInTheDocument();
-    expect(screen.getByText('IDENTITY')).toBeInTheDocument();
-    expect(screen.getByText('NOC')).toBeInTheDocument();
+    expect(screen.getByText('Identity')).toBeInTheDocument();
+
+    // 'NOC' also appears in the page header (next to the logo), so two
+    // matches are genuinely expected here — confirm the badge specifically
+    // by checking there are at least two, not exactly one.
+    expect(screen.getAllByText('NOC').length).toBeGreaterThanOrEqual(2);
 
     // NOC event (11:00) is more recent than Identity event (10:00),
     // so it should render first in the DOM.
