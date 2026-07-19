@@ -34,10 +34,10 @@ export default function Subnets() {
       {error && <p className="text-status-down font-mono text-sm">{error}</p>}
 
       {!loading && !error && (
-        <div className="bg-ink-900 border border-ink-800 rounded-lg overflow-hidden">
+        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-ink-800 text-left">
+              <tr className="border-b border-ink-700 text-left">
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">CIDR</th>
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Description</th>
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Site</th>
@@ -45,7 +45,7 @@ export default function Subnets() {
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide text-right">Available</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-800">
+            <tbody className="divide-y divide-ink-700">
               {subnets.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-8 text-center text-mist-400">

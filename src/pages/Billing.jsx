@@ -53,13 +53,13 @@ export default function Billing() {
         <>
           {billingStatus && (
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-ink-900 border border-ink-800 rounded-lg p-5">
+              <div className="bg-ink-900 border border-ink-700 rounded-lg p-5">
                 <p className="text-xs uppercase tracking-wide text-mist-400 mb-2">Account status</p>
                 <p className="font-mono text-2xl text-mist-50 capitalize">
                   {billingStatus.billing_account?.status}
                 </p>
               </div>
-              <div className="bg-ink-900 border border-ink-800 rounded-lg p-5">
+              <div className="bg-ink-900 border border-ink-700 rounded-lg p-5">
                 <p className="text-xs uppercase tracking-wide text-mist-400 mb-2">Outstanding balance</p>
                 <p className="font-mono text-2xl text-signal">
                   KSh {Number(billingStatus.outstanding_balance).toLocaleString()}
@@ -68,10 +68,10 @@ export default function Billing() {
             </div>
           )}
 
-          <div className="bg-ink-900 border border-ink-800 rounded-lg overflow-hidden">
+          <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-ink-800 text-left">
+                <tr className="border-b border-ink-700 text-left">
                   <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Period</th>
                   <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Type</th>
                   <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide text-right">Devices</th>
@@ -79,7 +79,7 @@ export default function Billing() {
                   <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-800">
+              <tbody className="divide-y divide-ink-700">
                 {invoices.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-5 py-8 text-center text-mist-400">
