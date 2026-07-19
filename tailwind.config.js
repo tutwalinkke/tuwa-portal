@@ -8,18 +8,19 @@ export default {
     extend: {
       colors: {
         ink: {
-          950: '#0B1420',
-          900: '#111D2E',
-          800: '#1C2C40',
-          700: '#2A3F58',
+          950: '#0A0F1A',
+          900: '#101A2E',
+          850: '#141F35',
+          800: '#182238',
+          700: '#1B2740',
         },
         signal: {
           DEFAULT: '#F5A623',
           dim: '#B87A16',
         },
         status: {
-          up: '#22C55E',
-          down: '#EF4444',
+          up: '#34D399',
+          down: '#FB7185',
           warn: '#F59E0B',
         },
         mist: {

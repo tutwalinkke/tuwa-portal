@@ -38,6 +38,9 @@ export const nocApi = {
   dashboard: () =>
     axios.get(`${NOC_URL}/dashboard`, { headers: authHeaders() }),
 
+  bandwidthHistory: () =>
+    axios.get(`${NOC_URL}/dashboard/bandwidth-history`, { headers: authHeaders() }),
+
   devices: () =>
     axios.get(`${NOC_URL}/devices`, { headers: authHeaders() }),
 
