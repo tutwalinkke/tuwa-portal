@@ -104,4 +104,13 @@ export const nocApi = {
 
   deleteMaintenanceWindow: (id) =>
     axios.delete(`${NOC_URL}/maintenance-windows/${id}`, { headers: authHeaders() }),
+
+  topology: () =>
+    axios.get(`${NOC_URL}/topology`, { headers: authHeaders() }),
+
+  createTopologyLink: (data) =>
+    axios.post(`${NOC_URL}/topology/links`, data, { headers: authHeaders() }),
+
+  deleteTopologyLink: (id) =>
+    axios.delete(`${NOC_URL}/topology/links/${id}`, { headers: authHeaders() }),
 };
