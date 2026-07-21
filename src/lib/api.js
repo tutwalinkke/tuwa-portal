@@ -20,9 +20,16 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function bearerHeader(token) {
+  return { Authorization: `Bearer ${token}` };
+}
+
 export const identityApi = {
   login: (email, password) =>
     axios.post(`${IDENTITY_URL}/login`, { email, password }),
+
+  verifyTwoFactor: (pendingToken, code) =>
+    axios.post(`${IDENTITY_URL}/login/verify-two-factor`, { code }, { headers: bearerHeader(pendingToken) }),
 
   me: () =>
     axios.get(`${IDENTITY_URL}/me`, { headers: authHeaders() }),
@@ -32,6 +39,18 @@ export const identityApi = {
 
   activity: () =>
     axios.get(`${IDENTITY_URL}/activity`, { headers: authHeaders() }),
+
+  twoFactorStatus: () =>
+    axios.get(`${IDENTITY_URL}/two-factor/status`, { headers: authHeaders() }),
+
+  twoFactorSetup: () =>
+    axios.post(`${IDENTITY_URL}/two-factor/setup`, {}, { headers: authHeaders() }),
+
+  twoFactorConfirm: (code) =>
+    axios.post(`${IDENTITY_URL}/two-factor/confirm`, { code }, { headers: authHeaders() }),
+
+  twoFactorDisable: (password) =>
+    axios.post(`${IDENTITY_URL}/two-factor/disable`, { password }, { headers: authHeaders() }),
 };
 
 export const nocApi = {

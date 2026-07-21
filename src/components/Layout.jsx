@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Network, Receipt, Activity as ActivityIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Network, Receipt, Activity as ActivityIcon, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/subnets', label: 'Subnets', icon: Network },
   { to: '/billing', label: 'Billing', icon: Receipt },
   { to: '/activity', label: 'Activity', icon: ActivityIcon },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 function NavItem({ to, label, Icon }) {

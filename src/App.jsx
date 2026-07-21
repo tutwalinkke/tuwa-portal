@@ -6,10 +6,10 @@ import Subnets from './pages/Subnets';
 import Billing from './pages/Billing';
 import Customers from './pages/Customers';
 import Activity from './pages/Activity';
+import Settings from './pages/Settings';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-
   if (loading) {
     return (
       <div className="min-h-screen bg-ink-950 flex items-center justify-center">
@@ -17,11 +17,9 @@ function ProtectedRoute({ children }) {
       </div>
     );
   }
-
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   return children;
 }
 
@@ -68,6 +66,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Activity />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

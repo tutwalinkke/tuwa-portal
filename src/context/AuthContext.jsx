@@ -14,7 +14,6 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
-
     identityApi
       .me()
       .then((res) => {
@@ -27,8 +26,27 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  /**
+   * Returns either { requiresTwoFactor: true, pendingToken } — the
+   * caller (Login page) is responsible for prompting for a code and
+   * calling verifyTwoFactor — or a real logged-in session directly,
+   * same as before MFA existed.
+   */
   async function login(email, password) {
     const res = await identityApi.login(email, password);
+
+    if (res.data.requires_two_factor) {
+      return { requiresTwoFactor: true, pendingToken: res.data.pending_token };
+    }
+
+    setToken(res.data.token);
+    setUser(res.data.user);
+    setRoles(res.data.roles || []);
+    return { requiresTwoFactor: false };
+  }
+
+  async function verifyTwoFactor(pendingToken, code) {
+    const res = await identityApi.verifyTwoFactor(pendingToken, code);
     setToken(res.data.token);
     setUser(res.data.user);
     setRoles(res.data.roles || []);
@@ -48,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, roles, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, roles, loading, login, verifyTwoFactor, logout }}>
       {children}
     </AuthContext.Provider>
   );
