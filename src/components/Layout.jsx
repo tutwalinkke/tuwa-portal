@@ -1,9 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Network, Receipt, Activity as ActivityIcon, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, Users, Network, Receipt, Activity as ActivityIcon, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/incidents', label: 'Incidents', icon: AlertTriangle },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/subnets', label: 'Subnets', icon: Network },
   { to: '/billing', label: 'Billing', icon: Receipt },

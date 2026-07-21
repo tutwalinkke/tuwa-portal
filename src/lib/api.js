@@ -83,4 +83,25 @@ export const nocApi = {
 
   activity: () =>
     axios.get(`${NOC_URL}/activity`, { headers: authHeaders() }),
+
+  incidents: (status) =>
+    axios.get(`${NOC_URL}/incidents`, { headers: authHeaders(), params: status ? { status } : {} }),
+
+  acknowledgeIncident: (id) =>
+    axios.post(`${NOC_URL}/incidents/${id}/acknowledge`, {}, { headers: authHeaders() }),
+
+  resolveIncident: (id) =>
+    axios.post(`${NOC_URL}/incidents/${id}/resolve`, {}, { headers: authHeaders() }),
+
+  maintenanceWindows: () =>
+    axios.get(`${NOC_URL}/maintenance-windows`, { headers: authHeaders() }),
+
+  createMaintenanceWindow: (data) =>
+    axios.post(`${NOC_URL}/maintenance-windows`, data, { headers: authHeaders() }),
+
+  endMaintenanceWindowEarly: (id) =>
+    axios.post(`${NOC_URL}/maintenance-windows/${id}/end-early`, {}, { headers: authHeaders() }),
+
+  deleteMaintenanceWindow: (id) =>
+    axios.delete(`${NOC_URL}/maintenance-windows/${id}`, { headers: authHeaders() }),
 };
