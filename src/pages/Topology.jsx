@@ -9,19 +9,95 @@ const STATUS_COLORS = {
   unknown: '#8B9CB0',
 };
 
-function layoutDevices(devices, width, height) {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radius = Math.min(width, height) / 2 - 60;
+// Tiering is derived from the real device `type` field we already
+// store — not a fabricated hierarchy. Matches common WISP topology
+// conventions (core router -> distribution switch -> access/edge).
+// Devices of a type with no tier mapping fall into the last tier
+// rather than being silently dropped.
+const TYPE_TIER = {
+  router: 0,
+  switch: 1,
+  olt: 2,
+  access_point: 2,
+  server: 3,
+  ups: 3,
+  other: 3,
+};
 
-  return devices.map((device, i) => {
-    const angle = (2 * Math.PI * i) / Math.max(devices.length, 1) - Math.PI / 2;
-    return {
-      ...device,
-      x: centerX + radius * Math.cos(angle),
-      y: centerY + radius * Math.sin(angle),
-    };
+const TYPE_ABBR = {
+  router: 'RTR',
+  switch: 'SW',
+  olt: 'OLT',
+  access_point: 'AP',
+  server: 'SRV',
+  ups: 'UPS',
+  other: '?',
+};
+
+const TIER_LABELS = ['Core', 'Distribution', 'Access', 'Other'];
+
+function layoutDevices(devices, width) {
+  const tierGroups = {};
+  devices.forEach((d) => {
+    const tier = TYPE_TIER[d.type] ?? 3;
+    if (!tierGroups[tier]) tierGroups[tier] = [];
+    tierGroups[tier].push(d);
   });
+
+  const presentTiers = Object.keys(tierGroups).map(Number).sort((a, b) => a - b);
+  const rowHeight = 150;
+  const topPadding = 70;
+  const height = topPadding + presentTiers.length * rowHeight + 40;
+
+  const positioned = [];
+  presentTiers.forEach((tier, rowIndex) => {
+    const group = tierGroups[tier];
+    const y = topPadding + rowIndex * rowHeight;
+    const spacing = width / (group.length + 1);
+    group.forEach((d, i) => {
+      positioned.push({ ...d, x: spacing * (i + 1), y, tier });
+    });
+  });
+
+  return { positioned, height, presentTiers };
+}
+
+function StatusPulseNode({ d, isSelected, onClick }) {
+  const color = STATUS_COLORS[d.status] || STATUS_COLORS.unknown;
+  return (
+    <g style={{ cursor: 'pointer' }} onClick={() => onClick(d)}>
+      {d.status === 'up' && (
+        <circle cx={d.x} cy={d.y} r={22} fill="none" stroke={color} strokeWidth={1} opacity={0.5}>
+          <animate attributeName="r" values="22;32;22" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+      )}
+      <circle
+        cx={d.x} cy={d.y} r={22}
+        fill="#101A2E"
+        stroke={isSelected ? '#F5A623' : color}
+        strokeWidth={isSelected ? 3.5 : 2.5}
+      />
+      <text
+        x={d.x} y={d.y + 4}
+        fill={color} fontSize={9} fontFamily="monospace" fontWeight={700} textAnchor="middle"
+      >
+        {TYPE_ABBR[d.type] || '?'}
+      </text>
+      <text
+        x={d.x} y={d.y + 40}
+        fill="#F2F5F8" fontSize={12} fontFamily="'Inter', sans-serif" fontWeight={500} textAnchor="middle"
+      >
+        {d.name}
+      </text>
+      <text
+        x={d.x} y={d.y + 55}
+        fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
+      >
+        {d.ip_address}
+      </text>
+    </g>
+  );
 }
 
 export default function Topology() {
@@ -33,6 +109,7 @@ export default function Topology() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ device_a_id: '', device_b_id: '', link_type: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState(null);
 
   function load() {
     setLoading(true);
@@ -81,9 +158,8 @@ export default function Topology() {
     }
   }
 
-  const width = 700;
-  const height = 500;
-  const positioned = layoutDevices(devices, width, height);
+  const width = 800;
+  const { positioned, height, presentTiers } = layoutDevices(devices, width);
   const positionById = Object.fromEntries(positioned.map((d) => [d.id, d]));
 
   return (
@@ -91,7 +167,7 @@ export default function Topology() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl text-mist-50 font-semibold">Topology</h1>
-          <p className="text-mist-400 text-sm">Declared network connections with live device status</p>
+          <p className="text-mist-400 text-sm">Declared network connections with live device status — tiered by device type</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -175,51 +251,80 @@ export default function Topology() {
           {devices.length === 0 ? (
             <p className="text-mist-400 text-sm text-center py-12">No devices to display.</p>
           ) : (
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-              {links.map((link) => {
-                const a = positionById[link.device_a_id];
-                const b = positionById[link.device_b_id];
-                if (!a || !b) return null;
-                return (
-                  <g key={link.id}>
-                    <line
-                      x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                      stroke="#2A3F58" strokeWidth={2}
-                    />
-                    <text
-                      x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 6}
-                      fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
-                    >
-                      {link.link_type || ''}
-                    </text>
-                  </g>
-                );
-              })}
-              {positioned.map((d) => (
-                <g key={d.id}>
-                  <circle
-                    cx={d.x} cy={d.y} r={22}
-                    fill="#101A2E"
-                    stroke={STATUS_COLORS[d.status] || STATUS_COLORS.unknown}
-                    strokeWidth={3}
+            <div className="relative">
+              {/* Tier labels down the left edge — real, derived from actual device types present */}
+              <div className="absolute left-0 top-0 flex flex-col text-xs font-mono uppercase text-mist-400" style={{ height: `${height}px` }}>
+                {presentTiers.map((tier, i) => (
+                  <div
+                    key={tier}
+                    className="absolute"
+                    style={{ top: `${(70 + i * 150) / height * 100}%`, transform: 'translateY(-50%)' }}
+                  >
+                    {TIER_LABELS[tier] || 'Other'}
+                  </div>
+                ))}
+              </div>
+              <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
+                {links.map((link) => {
+                  const a = positionById[link.device_a_id];
+                  const b = positionById[link.device_b_id];
+                  if (!a || !b) return null;
+
+                  // A link spanning more than one tier gap (e.g. Core
+                  // straight to Access, skipping Distribution) would
+                  // otherwise draw a straight line directly through
+                  // whatever real device happens to sit in a tier in
+                  // between — visually implying a connection to it
+                  // that was never declared. Curve those specific
+                  // links outward instead of drawing them straight.
+                  const tierGap = Math.abs(a.tier - b.tier);
+                  const isMultiTierSpan = tierGap > 1;
+                  const midX = (a.x + b.x) / 2;
+                  const midY = (a.y + b.y) / 2;
+                  const bowX = isMultiTierSpan ? midX + 90 : midX;
+
+                  const path = isMultiTierSpan
+                    ? `M ${a.x} ${a.y} Q ${bowX} ${midY} ${b.x} ${b.y}`
+                    : `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+
+                  return (
+                    <g key={link.id}>
+                      <path d={path} stroke="#2A3F58" strokeWidth={2} fill="none" />
+                      <text
+                        x={isMultiTierSpan ? bowX : midX} y={midY - 6}
+                        fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
+                      >
+                        {link.link_type || ''}
+                      </text>
+                    </g>
+                  );
+                })}
+                {positioned.map((d) => (
+                  <StatusPulseNode
+                    key={d.id}
+                    d={d}
+                    isSelected={selectedDevice?.id === d.id}
+                    onClick={setSelectedDevice}
                   />
-                  <circle cx={d.x} cy={d.y} r={5} fill={STATUS_COLORS[d.status] || STATUS_COLORS.unknown} />
-                  <text
-                    x={d.x} y={d.y + 40}
-                    fill="#F2F5F8" fontSize={12} fontFamily="'Inter', sans-serif" fontWeight={500} textAnchor="middle"
-                  >
-                    {d.name}
-                  </text>
-                  <text
-                    x={d.x} y={d.y + 55}
-                    fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
-                  >
-                    {d.ip_address}
-                  </text>
-                </g>
-              ))}
-            </svg>
+                ))}
+              </svg>
+            </div>
           )}
+        </div>
+      )}
+
+      {selectedDevice && (
+        <div className="mt-4 bg-ink-900 border border-signal/40 rounded-lg p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-mist-50 font-medium">{selectedDevice.name}</h2>
+            <button onClick={() => setSelectedDevice(null)} className="text-mist-400 hover:text-mist-50 text-sm">Close</button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><span className="text-mist-400 text-xs uppercase block">Type</span>{selectedDevice.type}</div>
+            <div><span className="text-mist-400 text-xs uppercase block">Status</span>{selectedDevice.status}</div>
+            <div><span className="text-mist-400 text-xs uppercase block">IP Address</span><span className="font-mono">{selectedDevice.ip_address}</span></div>
+            {selectedDevice.site && <div><span className="text-mist-400 text-xs uppercase block">Site</span>{selectedDevice.site}</div>}
+          </div>
         </div>
       )}
 

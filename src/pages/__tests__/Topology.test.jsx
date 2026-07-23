@@ -149,4 +149,55 @@ describe('Topology', () => {
       );
     });
   });
+
+  it('groups devices into real tiers derived from their actual type (router=Core, switch=Distribution)', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/topology')) {
+        return Promise.resolve({ data: { devices: sampleDevices, links: sampleLinks } });
+      }
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderTopology();
+
+    await waitFor(() => {
+      expect(screen.getByText('Router A')).toBeInTheDocument();
+    });
+
+    // The component's real DOM text is 'Core'/'Distribution' —
+    // the ALL-CAPS appearance in the browser is CSS text-transform,
+    // not the actual text content, which is what RTL matches against.
+    expect(screen.getByText('Core')).toBeInTheDocument();
+    expect(screen.getByText('Distribution')).toBeInTheDocument();
+  });
+
+  it('shows real device details when a node is clicked', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/topology')) {
+        return Promise.resolve({ data: { devices: sampleDevices, links: sampleLinks } });
+      }
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderTopology();
+
+    await waitFor(() => {
+      expect(screen.getByText('Router A')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Router A'));
+
+    await waitFor(() => {
+      expect(screen.getByText('IP Address')).toBeInTheDocument();
+    });
+
+    // '10.0.0.1' genuinely appears twice — once as the SVG node
+    // label, once in the details panel — both correct, real
+    // behavior. getAllByText confirms both are present rather than
+    // asserting on a single, ambiguous match.
+    expect(screen.getAllByText('10.0.0.1').length).toBeGreaterThanOrEqual(2);
+  });
+
 });
