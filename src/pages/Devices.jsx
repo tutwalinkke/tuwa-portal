@@ -185,7 +185,7 @@ export default function Devices() {
                 <p className="text-mist-400 text-xs mt-1.5">This prints the router's WireGuard public key — copy it.</p>
               </div>
 
-              <div>
+              <div className="mb-4">
                 <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Step 2 — redeem the code (from any machine with network access)</p>
                 <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-mist-200 text-xs overflow-x-auto whitespace-pre-wrap break-all">
 {`curl -X POST https://noc.tuwalink.com/api/v1/provisioning-codes/redeem \\
@@ -193,7 +193,18 @@ export default function Devices() {
   -d '{"code":"${provisionedCode.code}","wireguard_public_key":"<paste the public key from step 1>"}'`}
                 </pre>
                 <p className="text-mist-400 text-xs mt-1.5">
-                  The response includes the server's public key and endpoint — add those as a WireGuard peer on the router to complete the tunnel.
+                  The response is JSON with three fields you'll need for step 3: assigned_ip, server_public_key, server_endpoint.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Step 3 — back on the router, complete the tunnel</p>
+                <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-mist-200 text-xs overflow-x-auto whitespace-pre-wrap break-all">
+{`/ip/address/add address=<assigned_ip>/24 interface=wg0
+/interface/wireguard/peers/add interface=wg0 public-key="<server_public_key>" endpoint-address=<host from server_endpoint> endpoint-port=<port from server_endpoint> allowed-address=10.20.0.1/32 persistent-keepalive=25s`}
+                </pre>
+                <p className="text-mist-400 text-xs mt-1.5">
+                  server_endpoint is host:port together (e.g. 129.121.102.51:51821) — split it into the two separate fields RouterOS expects.
                 </p>
               </div>
             </div>
