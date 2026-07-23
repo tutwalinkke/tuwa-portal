@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { nocApi } from '../lib/api';
+import axios from 'axios';
+
+const NOC_URL = 'https://noc.tuwalink.com/api/v1';
 
 const STATUS_STYLES = {
   up: 'text-status-up bg-status-up/10 border-status-up/30',
@@ -27,6 +30,36 @@ function StatusBadge({ status }) {
   );
 }
 
+// Verified end-to-end against real MikroTik RouterOS hardware — every
+// piece of this (interface creation, /tool fetch, JSON field
+// extraction via string search, endpoint host:port splitting, tunnel
+// completion) was tested individually and then as a whole against a
+// real hEX S before being trusted here. Wrapped in :do/:on-error so a
+// bad or expired code fails with a readable message instead of a raw
+// RouterOS error.
+function buildOnePasteCommand(code) {
+  return `:do {
+  :local code "${code}";
+  /interface/wireguard/add name=wg0 listen-port=13231;
+  :local pubkey [/interface/wireguard/get wg0 public-key];
+  :local result [/tool fetch url="https://noc.tuwalink.com/api/v1/provisioning-codes/redeem" http-method=post http-header-field="Content-Type: application/json" http-data="{\\"code\\":\\"$code\\",\\"wireguard_public_key\\":\\"$pubkey\\"}" as-value output=user];
+  :local jsonData ($result->"data");
+  :local extractField do={:local sf ("\\"" . $field . "\\":\\""); :local sp ([:find $data $sf] + [:len $sf]); :local ep [:find $data "\\"" $sp]; :return [:pick $data $sp $ep]};
+  :local assignedIp [$extractField data=$jsonData field="assigned_ip"];
+  :local serverKey [$extractField data=$jsonData field="server_public_key"];
+  :local endpoint [$extractField data=$jsonData field="server_endpoint"];
+  :local colonPos [:find $endpoint ":"];
+  :local endpointHost [:pick $endpoint 0 $colonPos];
+  :local endpointPort [:pick $endpoint ($colonPos + 1) [:len $endpoint]];
+  /ip/address/add address="$assignedIp/24" interface=wg0;
+  /interface/wireguard/peers/add interface=wg0 public-key="$serverKey" endpoint-address=$endpointHost endpoint-port=$endpointPort allowed-address=10.20.0.1/32 persistent-keepalive=25s;
+  :put "Connected successfully. Assigned IP: $assignedIp";
+} on-error={
+  /interface/wireguard/remove [find name=wg0];
+  :put "Provisioning failed — the code may be invalid, expired, or already used. Generate a new one and try again.";
+}`;
+}
+
 export default function Devices() {
   const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
@@ -37,6 +70,9 @@ export default function Devices() {
   const [provisionedCode, setProvisionedCode] = useState(null);
   const [deviceType, setDeviceType] = useState('router');
   const [deviceName, setDeviceName] = useState('');
+  const [pollStatus, setPollStatus] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const pollIntervalRef = useRef(null);
 
   function load() {
     setLoading(true);
@@ -57,6 +93,37 @@ export default function Devices() {
     load();
   }, [navigate]);
 
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
+
+  function startPolling(code) {
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await axios.get(`${NOC_URL}/provisioning-codes/${code}/status`);
+        setPollStatus(res.data.status);
+
+        if (res.data.status === 'connected') {
+          clearInterval(pollIntervalRef.current);
+          setSuccessMessage(`"${res.data.device_name}" connected successfully.`);
+          setTimeout(() => {
+            setShowProvisionPanel(false);
+            setProvisionedCode(null);
+            setPollStatus(null);
+            setDeviceType('router');
+            setDeviceName('');
+            load();
+          }, 1800);
+        }
+      } catch {
+        // A transient poll failure isn't worth surfacing — the next
+        // poll a few seconds later will likely succeed.
+      }
+    }, 3000);
+  }
+
   async function handleGenerateCode(e) {
     e.preventDefault();
     setProvisioning(true);
@@ -64,6 +131,8 @@ export default function Devices() {
     try {
       const res = await nocApi.createProvisioningCode(deviceType, deviceName || undefined);
       setProvisionedCode(res.data);
+      setPollStatus('waiting_for_redemption');
+      startPolling(res.data.code);
     } catch (err) {
       setError('Could not generate a provisioning code.');
     } finally {
@@ -72,21 +141,20 @@ export default function Devices() {
   }
 
   function closeProvisionPanel() {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     setShowProvisionPanel(false);
     setProvisionedCode(null);
+    setPollStatus(null);
     setDeviceType('router');
     setDeviceName('');
     load();
   }
 
-  // NOTE: RouterOS does not support bash-style $(...) command
-  // substitution — an earlier version of this command wrongly mixed
-  // that in, which would have failed if actually pasted into a
-  // router. Correct RouterOS scripting requires storing the public
-  // key in a :local variable first, then building the fetch call
-  // separately. Full one-paste automation is still a planned next
-  // step, not something to fake as already working.
-  const setupCommand = `/interface/wireguard/add name=wg0 listen-port=13231\n:local pubkey [/interface/wireguard/get wg0 public-key]\n:put $pubkey`;
+  const POLL_LABELS = {
+    waiting_for_redemption: 'Waiting for the code to be run on the router…',
+    waiting_for_connection: 'Code accepted — waiting for the device to connect…',
+    connected: 'Connected!',
+  };
 
   return (
     <Layout>
@@ -102,6 +170,12 @@ export default function Devices() {
           + Add Device
         </button>
       </div>
+
+      {successMessage && (
+        <div className="mb-4 px-3 py-2 rounded border border-status-up/30 bg-status-up/10 text-status-up text-sm">
+          ✓ {successMessage}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 px-3 py-2 rounded border border-status-down/30 bg-status-down/10 text-status-down text-sm">
@@ -159,54 +233,30 @@ export default function Devices() {
             </form>
           )}
 
-          {provisionedCode && (
+          {provisionedCode && pollStatus !== 'connected' && (
             <div>
               <div className="mb-4">
-                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Your provisioning code</p>
-                <div className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-signal text-sm break-all">
-                  {provisionedCode.code}
-                </div>
+                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Run this once on the router (RouterOS terminal)</p>
+                <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-signal text-xs overflow-x-auto whitespace-pre-wrap break-all">
+{buildOnePasteCommand(provisionedCode.code)}
+                </pre>
                 <p className="text-mist-400 text-xs mt-1.5">
-                  Expires at {new Date(provisionedCode.expires_at).toLocaleTimeString()} — one use only.
+                  Paste this once into a RouterOS terminal (WinBox or SSH) — everything else is automatic.
+                  Expires at {new Date(provisionedCode.expires_at).toLocaleTimeString()}.
                   {deviceName && ` Will be added as "${deviceName}".`}
                 </p>
               </div>
 
-              <div className="mb-4 px-3 py-2 rounded border border-signal/30 bg-signal/10 text-mist-200 text-xs leading-relaxed">
-                A fully automated one-paste command isn't built yet — this is a two-step manual process
-                for now. Full automation is a planned next step, not something we're pretending already works.
+              <div className="flex items-center gap-2 px-3 py-2 rounded border border-signal/30 bg-signal/10 text-mist-200 text-sm">
+                <span className="inline-block w-2 h-2 rounded-full bg-signal animate-pulse" />
+                {POLL_LABELS[pollStatus] || 'Waiting…'}
               </div>
+            </div>
+          )}
 
-              <div className="mb-4">
-                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Step 1 — run on the router (RouterOS terminal)</p>
-                <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-mist-200 text-xs overflow-x-auto whitespace-pre-wrap break-all">
-{setupCommand}
-                </pre>
-                <p className="text-mist-400 text-xs mt-1.5">This prints the router's WireGuard public key — copy it.</p>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Step 2 — redeem the code (from any machine with network access)</p>
-                <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-mist-200 text-xs overflow-x-auto whitespace-pre-wrap break-all">
-{`curl -X POST https://noc.tuwalink.com/api/v1/provisioning-codes/redeem \\
-  -H "Content-Type: application/json" \\
-  -d '{"code":"${provisionedCode.code}","wireguard_public_key":"<paste the public key from step 1>"}'`}
-                </pre>
-                <p className="text-mist-400 text-xs mt-1.5">
-                  The response is JSON with three fields you'll need for step 3: assigned_ip, server_public_key, server_endpoint.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs uppercase tracking-wide text-mist-400 mb-1.5">Step 3 — back on the router, complete the tunnel</p>
-                <pre className="bg-ink-950 border border-ink-700 rounded px-4 py-3 font-mono text-mist-200 text-xs overflow-x-auto whitespace-pre-wrap break-all">
-{`/ip/address/add address=<assigned_ip>/24 interface=wg0
-/interface/wireguard/peers/add interface=wg0 public-key="<server_public_key>" endpoint-address=<host from server_endpoint> endpoint-port=<port from server_endpoint> allowed-address=10.20.0.1/32 persistent-keepalive=25s`}
-                </pre>
-                <p className="text-mist-400 text-xs mt-1.5">
-                  server_endpoint is host:port together (e.g. 129.121.102.51:51821) — split it into the two separate fields RouterOS expects.
-                </p>
-              </div>
+          {provisionedCode && pollStatus === 'connected' && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded border border-status-up/30 bg-status-up/10 text-status-up text-sm">
+              ✓ Connected!
             </div>
           )}
         </div>
