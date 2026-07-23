@@ -51,15 +51,19 @@ function buildOnePasteCommand(code) {
   :local assignedIp [$extractField data=$jsonData field="assigned_ip"];
   :local serverKey [$extractField data=$jsonData field="server_public_key"];
   :local endpoint [$extractField data=$jsonData field="server_endpoint"];
+  :local snmpCommunity [$extractField data=$jsonData field="snmp_community"];
+  :local serverWgIp [$extractField data=$jsonData field="server_wireguard_ip"];
   :local colonPos [:find $endpoint ":"];
   :local endpointHost [:pick $endpoint 0 $colonPos];
   :local endpointPort [:pick $endpoint ($colonPos + 1) [:len $endpoint]];
   /ip/address/add address="$assignedIp/24" interface=wg0;
-  /interface/wireguard/peers/add interface=wg0 public-key="$serverKey" endpoint-address=$endpointHost endpoint-port=$endpointPort allowed-address=10.20.0.1/32 persistent-keepalive=25s;
+  /interface/wireguard/peers/add interface=wg0 public-key="$serverKey" endpoint-address=$endpointHost endpoint-port=$endpointPort allowed-address="$serverWgIp/32" persistent-keepalive=25s;
+  /snmp/set enabled=yes;
+  /snmp/community/set [find name=public] name="$snmpCommunity" addresses="$serverWgIp/32";
   :put "Connected successfully. Assigned IP: $assignedIp";
 } on-error={
   /interface/wireguard/remove [find name=wg0];
-  :put "Provisioning failed — the code may be invalid, expired, or already used. Generate a new one and try again.";
+  :put "Provisioning failed. This can happen if: the code is invalid, expired, or already used; the redemption request was rate-limited (too many attempts in a short window — wait a minute and try again with a fresh code); or there was a network issue reaching the server. Generate a new code and try again.";
 }`;
 }
 
