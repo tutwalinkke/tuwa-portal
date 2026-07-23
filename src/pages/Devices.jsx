@@ -40,6 +40,9 @@ function StatusBadge({ status }) {
 function buildOnePasteCommand(code) {
   return `:do {
   :local code "${code}";
+  :if ([:len [/interface/wireguard/find name=wg0]] > 0) do={
+    :error "A WireGuard interface named wg0 already exists on this router. Remove or rename it first, then run this again.";
+  };
   /interface/wireguard/add name=wg0 listen-port=13231;
   :local pubkey [/interface/wireguard/get wg0 public-key];
   :local result [/tool fetch url="https://noc.tuwalink.com/api/v1/provisioning-codes/redeem" http-method=post http-header-field="Content-Type: application/json" http-data="{\\"code\\":\\"$code\\",\\"wireguard_public_key\\":\\"$pubkey\\"}" as-value output=user];

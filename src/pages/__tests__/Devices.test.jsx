@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Devices from '../Devices';
 import { AuthProvider } from '../../context/AuthContext';
@@ -37,6 +37,11 @@ describe('Devices', () => {
   beforeEach(() => {
     localStorage.setItem('tuwa_token', 'fake-token');
     vi.clearAllMocks();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders devices with status badges', async () => {
@@ -88,10 +93,11 @@ describe('Devices', () => {
     expect(screen.getByLabelText('Device name (optional)')).toBeInTheDocument();
   });
 
-  it('generates a code with the selected type and name, and shows both provisioning steps', async () => {
+  it('generates a code and shows the single one-paste command containing it', async () => {
     axios.get.mockImplementation((url) => {
       if (url.includes('/me')) return mockMe();
       if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      if (url.includes('/status')) return Promise.resolve({ data: { status: 'waiting_for_redemption' } });
       return Promise.reject(new Error('unexpected URL: ' + url));
     });
 
@@ -123,13 +129,64 @@ describe('Devices', () => {
       );
     });
 
+    // The one-paste command should contain the real generated code —
+    // no separate "Step 1/2/3" instructions to look for anymore.
     await waitFor(() => {
-      expect(screen.getByText('a-real-generated-code')).toBeInTheDocument();
+      expect(screen.getByText(/a-real-generated-code/)).toBeInTheDocument();
     });
 
-    // Both provisioning steps should be shown, using the real code.
-    expect(screen.getByText(/Step 1/)).toBeInTheDocument();
-    expect(screen.getByText(/Step 2/)).toBeInTheDocument();
-    expect(screen.getByText(/Will be added as "Test OLT"/)).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for the code to be run on the router/)).toBeInTheDocument();
+  });
+
+  it('polls status and shows the success banner once the device connects', async () => {
+    let pollCount = 0;
+
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      if (url.includes('/status')) {
+        pollCount += 1;
+        if (pollCount === 1) return Promise.resolve({ data: { status: 'waiting_for_connection' } });
+        return Promise.resolve({
+          data: { status: 'connected', device_name: 'tuwatest', device_id: 5 },
+        });
+      }
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    axios.post.mockImplementation((url) => {
+      if (url.includes('/provisioning-codes')) {
+        return Promise.resolve({
+          data: { code: 'a-real-generated-code', expires_at: '2026-07-23T22:00:00.000000Z' },
+        });
+      }
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('No devices yet. Add one to get started.')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('+ Add Device'));
+    fireEvent.click(screen.getByText('Generate Code'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/a-real-generated-code/)).toBeInTheDocument();
+    });
+
+    // Advance past two 3-second poll intervals, wrapped in act()
+    // since each tick triggers a real React state update.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3100);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3100);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/tuwatest.*connected successfully/)).toBeInTheDocument();
+    });
   });
 });
