@@ -113,4 +113,10 @@ export const nocApi = {
 
   deleteTopologyLink: (id) =>
     axios.delete(`${NOC_URL}/topology/links/${id}`, { headers: authHeaders() }),
+
+  createProvisioningCode: (deviceType, deviceName) =>
+    axios.post(`${NOC_URL}/provisioning-codes`, {
+      ...(deviceType ? { device_type: deviceType } : {}),
+      ...(deviceName ? { device_name: deviceName } : {}),
+    }, { headers: authHeaders() }),
 };

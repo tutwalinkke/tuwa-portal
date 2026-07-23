@@ -9,6 +9,7 @@ import Activity from './pages/Activity';
 import Settings from './pages/Settings';
 import Incidents from './pages/Incidents';
 import Topology from './pages/Topology';
+import Devices from './pages/Devices';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -52,6 +53,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Topology />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/devices"
+            element={
+              <ProtectedRoute>
+                <Devices />
               </ProtectedRoute>
             }
           />
