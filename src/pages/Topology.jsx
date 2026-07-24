@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 
 const STATUS_COLORS = {
@@ -74,8 +75,8 @@ function StatusPulseNode({ d, isSelected, onClick }) {
       )}
       <circle
         cx={d.x} cy={d.y} r={22}
-        fill="#101A2E"
-        stroke={isSelected ? '#F5A623' : color}
+        fill="#0B0E15"
+        stroke={isSelected ? '#3B9EFF' : color}
         strokeWidth={isSelected ? 3.5 : 2.5}
       />
       <text
@@ -86,13 +87,13 @@ function StatusPulseNode({ d, isSelected, onClick }) {
       </text>
       <text
         x={d.x} y={d.y + 40}
-        fill="#F2F5F8" fontSize={12} fontFamily="'Inter', sans-serif" fontWeight={500} textAnchor="middle"
+        fill="#EEF1F7" fontSize={12} fontFamily="'Inter', sans-serif" fontWeight={500} textAnchor="middle"
       >
         {d.name}
       </text>
       <text
         x={d.x} y={d.y + 55}
-        fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
+        fill="#8D94A8" fontSize={10} fontFamily="monospace" textAnchor="middle"
       >
         {d.ip_address}
       </text>
@@ -171,7 +172,7 @@ export default function Topology() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-signal hover:bg-signal-dim text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+          className="bg-signal hover:bg-signal-dim text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add Link'}
         </button>
@@ -184,7 +185,7 @@ export default function Topology() {
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-ink-900 border border-ink-700 rounded-lg p-5 mb-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-ink-900 border border-ink-700 rounded p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="link-device-a" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Device A</label>
@@ -237,7 +238,7 @@ export default function Topology() {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+            className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
           >
             {submitting ? 'Saving…' : 'Create Link'}
           </button>
@@ -247,7 +248,7 @@ export default function Topology() {
       {loading && <p className="text-mist-400 font-mono text-sm">Loading…</p>}
 
       {!loading && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg p-5">
+        <div className="bg-ink-900 border border-ink-700 rounded p-5">
           {devices.length === 0 ? (
             <p className="text-mist-400 text-sm text-center py-12">No devices to display.</p>
           ) : (
@@ -289,10 +290,10 @@ export default function Topology() {
 
                   return (
                     <g key={link.id}>
-                      <path d={path} stroke="#2A3F58" strokeWidth={2} fill="none" />
+                      <path d={path} stroke="#1C2029" strokeWidth={2} fill="none" />
                       <text
                         x={isMultiTierSpan ? bowX : midX} y={midY - 6}
-                        fill="#8B9CB0" fontSize={10} fontFamily="monospace" textAnchor="middle"
+                        fill="#8D94A8" fontSize={10} fontFamily="monospace" textAnchor="middle"
                       >
                         {link.link_type || ''}
                       </text>
@@ -314,7 +315,7 @@ export default function Topology() {
       )}
 
       {selectedDevice && (
-        <div className="mt-4 bg-ink-900 border border-signal/40 rounded-lg p-5">
+        <div className="mt-4 bg-ink-900 border border-signal/40 rounded p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-mist-50 font-medium">{selectedDevice.name}</h2>
             <button onClick={() => setSelectedDevice(null)} className="text-mist-400 hover:text-mist-50 text-sm">Close</button>
@@ -329,11 +330,11 @@ export default function Topology() {
       )}
 
       {!loading && links.length > 0 && (
-        <div className="mt-4 bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-ink-700">
-            <h2 className="font-display text-mist-50 font-medium text-sm">Declared links</h2>
-          </div>
-          <div className="divide-y divide-ink-700">
+        <div className="mt-4 bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">Declared links</h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
             {links.map((link) => {
               const a = devices.find((d) => d.id === link.device_a_id);
               const b = devices.find((d) => d.id === link.device_b_id);
