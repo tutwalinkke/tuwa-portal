@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { identityApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -104,7 +105,7 @@ export default function Settings() {
       )}
 
       {recoveryCodes && (
-        <div className="mb-6 bg-ink-900 border border-signal/30 rounded-lg p-5">
+        <div className="mb-6 bg-ink-900 border border-signal/30 rounded p-5">
           <h2 className="font-display text-mist-50 font-medium mb-2">Save your recovery codes</h2>
           <p className="text-mist-400 text-sm mb-4">
             Each code works once, if you lose access to your authenticator app. Store these somewhere safe — they will not be shown again.
@@ -118,16 +119,17 @@ export default function Settings() {
           </div>
           <button
             onClick={() => setRecoveryCodes(null)}
-            className="bg-signal hover:bg-signal-dim text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+            className="bg-signal hover:bg-signal-dim text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
           >
             I've saved these codes
           </button>
         </div>
       )}
 
-      <div className="bg-ink-900 border border-ink-700 rounded-lg p-5">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="font-display text-mist-50 font-medium">Two-factor authentication</h2>
+      <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+        <CardHead>
+          <div className="flex items-center justify-between mb-1 pb-4">
+            <h2 className="font-display text-mist-50 font-medium">Two-factor authentication</h2>
           {enabled !== null && (
             <span className={`text-xs font-mono uppercase px-2 py-0.5 rounded border ${
               enabled
@@ -137,7 +139,9 @@ export default function Settings() {
               {enabled ? 'Enabled' : 'Disabled'}
             </span>
           )}
-        </div>
+          </div>
+        </CardHead>
+        <div className="px-5 pb-5 border-t border-ink-700 mt-3 pt-4">
         <p className="text-mist-400 text-sm mb-4">
           Require a code from an authenticator app in addition to your password when signing in.
         </p>
@@ -145,7 +149,7 @@ export default function Settings() {
         {!enabled && !setupData && (
           <button
             onClick={handleBeginSetup}
-            className="bg-signal hover:bg-signal-dim text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+            className="bg-signal hover:bg-signal-dim text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
           >
             Enable two-factor authentication
           </button>
@@ -156,7 +160,7 @@ export default function Settings() {
             <p className="text-mist-200 text-sm mb-4">
               Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the code it generates.
             </p>
-            <div className="bg-white p-4 rounded-lg inline-block mb-4">
+            <div className="bg-white p-4 rounded inline-block mb-4">
               <QRCodeSVG value={setupData.qr_code_url} size={180} />
             </div>
             <p className="text-mist-400 text-xs font-mono mb-4">
@@ -165,10 +169,11 @@ export default function Settings() {
 
             <form onSubmit={handleConfirm} className="flex items-end gap-3">
               <div>
-                <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">
+                <label htmlFor="confirm-2fa-code" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">
                   Verification code
                 </label>
                 <input
+                  id="confirm-2fa-code"
                   type="text"
                   required
                   autoFocus
@@ -181,7 +186,7 @@ export default function Settings() {
               <button
                 type="submit"
                 disabled={confirming}
-                className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+                className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
               >
                 {confirming ? 'Confirming…' : 'Confirm'}
               </button>
@@ -201,10 +206,11 @@ export default function Settings() {
         {showDisableForm && (
           <form onSubmit={handleDisable} className="mt-4 pt-4 border-t border-ink-700 flex items-end gap-3">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">
+              <label htmlFor="disable-2fa-password" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">
                 Confirm your password
               </label>
               <input
+                id="disable-2fa-password"
                 type="password"
                 required
                 autoFocus
@@ -216,7 +222,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={disabling}
-              className="bg-status-down hover:bg-status-down/80 disabled:opacity-50 text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+              className="bg-status-down hover:bg-status-down/80 disabled:opacity-50 text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
             >
               {disabling ? 'Disabling…' : 'Disable'}
             </button>
@@ -229,6 +235,7 @@ export default function Settings() {
             </button>
           </form>
         )}
+        </div>
       </div>
     </Layout>
   );
