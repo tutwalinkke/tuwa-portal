@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 
 function formatBps(bps) {
@@ -9,19 +10,6 @@ function formatBps(bps) {
   if (bps >= 1_000_000) return `${(bps / 1_000_000).toFixed(1)} Mbps`;
   if (bps >= 1_000) return `${(bps / 1_000).toFixed(1)} Kbps`;
   return `${bps} bps`;
-}
-
-// Corner-bracket accent on card headers — a real detail adapted from
-// a design reference, small technical framing marks rather than a
-// plain border. Pure CSS, no extra markup needed beyond this wrapper.
-function CardHead({ children }) {
-  return (
-    <div className="relative px-5 pt-4 pb-0">
-      <span className="absolute -left-px -top-px w-2.5 h-2.5 border-l border-t border-ink-700 pointer-events-none" />
-      <span className="absolute -right-px -top-px w-2.5 h-2.5 border-r border-t border-ink-700 pointer-events-none" />
-      {children}
-    </div>
-  );
 }
 
 function HealthGauge({ percent }) {
