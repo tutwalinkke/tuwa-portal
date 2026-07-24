@@ -11,17 +11,30 @@ function formatBps(bps) {
   return `${bps} bps`;
 }
 
+// Corner-bracket accent on card headers — a real detail adapted from
+// a design reference, small technical framing marks rather than a
+// plain border. Pure CSS, no extra markup needed beyond this wrapper.
+function CardHead({ children }) {
+  return (
+    <div className="relative px-5 pt-4 pb-0">
+      <span className="absolute -left-px -top-px w-2.5 h-2.5 border-l border-t border-ink-700 pointer-events-none" />
+      <span className="absolute -right-px -top-px w-2.5 h-2.5 border-r border-t border-ink-700 pointer-events-none" />
+      {children}
+    </div>
+  );
+}
+
 function HealthGauge({ percent }) {
   const value = percent ?? 0;
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
-  const color = value >= 80 ? '#34D399' : value >= 50 ? '#F59E0B' : '#FB7185';
+  const color = value >= 80 ? '#22C55E' : value >= 50 ? '#F59E0B' : '#EF4444';
 
   return (
     <div className="relative w-36 h-36 flex items-center justify-center">
       <svg viewBox="0 0 140 140" className="w-full h-full -rotate-90">
-        <circle cx="70" cy="70" r={radius} fill="none" stroke="#182238" strokeWidth="10" />
+        <circle cx="70" cy="70" r={radius} fill="none" stroke="#1C2029" strokeWidth="10" />
         <circle
           cx="70" cy="70" r={radius} fill="none"
           stroke={color} strokeWidth="10" strokeLinecap="round"
@@ -40,11 +53,16 @@ function HealthGauge({ percent }) {
   );
 }
 
+// Redesigned "technical readout" KPI card: a small bordered accent
+// square (not an icon glyph — no icon set wired up here — but the
+// same outline-badge visual language), uppercase micro-label, large
+// mono value. Sharp 5px radius throughout, matching the reference.
 function StatCard({ label, value, accent }) {
   return (
-    <div className="bg-ink-900 border border-ink-700 rounded-lg p-4 flex flex-col justify-center h-full">
-      <p className="text-[11px] uppercase tracking-wider text-mist-400 mb-1">{label}</p>
-      <p className={`font-mono text-2xl font-medium ${accent || 'text-mist-50'}`}>{value}</p>
+    <div className="bg-ink-900 border border-ink-700 rounded p-4 flex flex-col justify-center h-full">
+      <span className={`inline-block w-2.5 h-2.5 rounded-sm border mb-3 ${accent ? accent.replace('text-', 'border-') : 'border-mist-400'}`} />
+      <p className="text-[10.5px] uppercase tracking-wider text-mist-400 font-semibold mb-1">{label}</p>
+      <p className={`font-mono text-2xl font-semibold ${accent || 'text-mist-50'}`}>{value}</p>
     </div>
   );
 }
@@ -66,36 +84,36 @@ function BandwidthChart({ data }) {
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="inGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F5A623" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#F5A623" stopOpacity={0} />
+            <stop offset="0%" stopColor="#3B9EFF" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#3B9EFF" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="outGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34D399" stopOpacity={0.25} />
-            <stop offset="100%" stopColor="#34D399" stopOpacity={0} />
+            <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="#22D3EE" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#182238" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#1C2029" vertical={false} />
         <XAxis
           dataKey="time"
-          tick={{ fill: '#8B9CB0', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-          axisLine={{ stroke: '#1B2740' }}
+          tick={{ fill: '#8D94A8', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+          axisLine={{ stroke: '#1C2029' }}
           tickLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
-          tick={{ fill: '#8B9CB0', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+          tick={{ fill: '#8D94A8', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v) => formatBps(v)}
           width={70}
         />
         <Tooltip
-          contentStyle={{ background: '#101A2E', border: '1px solid #1B2740', borderRadius: 6, fontSize: 12 }}
-          labelStyle={{ color: '#8B9CB0' }}
+          contentStyle={{ background: '#0B0E15', border: '1px solid #1C2029', borderRadius: 5, fontSize: 12 }}
+          labelStyle={{ color: '#8D94A8' }}
           formatter={(value) => formatBps(value)}
         />
-        <Area type="monotone" dataKey="in" stroke="#F5A623" strokeWidth={1.5} fill="url(#inGradient)" name="Inbound" />
-        <Area type="monotone" dataKey="out" stroke="#34D399" strokeWidth={1.5} fill="url(#outGradient)" name="Outbound" />
+        <Area type="monotone" dataKey="in" stroke="#3B9EFF" strokeWidth={1.5} fill="url(#inGradient)" name="Inbound" />
+        <Area type="monotone" dataKey="out" stroke="#22D3EE" strokeWidth={1.5} fill="url(#outGradient)" name="Outbound" />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -164,7 +182,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-4">
-        <div className="lg:col-span-1 bg-ink-900 border border-ink-700 rounded-lg p-5 flex items-center justify-center">
+        <div className="lg:col-span-1 bg-ink-900 border border-ink-700 rounded p-5 flex items-center justify-center">
           <HealthGauge percent={summary.health_percent} />
         </div>
         <div className="lg:col-span-3 grid grid-cols-3 gap-4">
@@ -172,29 +190,33 @@ export default function Dashboard() {
           <StatCard label="Devices Down" value={summary.devices_down ?? 0} accent="text-status-down" />
           <StatCard label="Total Monitored" value={summary.devices_total ?? 0} />
           <StatCard label="Inbound" value={formatBps(summary.total_in_bps)} accent="text-signal" />
-          <StatCard label="Outbound" value={formatBps(summary.total_out_bps)} accent="text-status-up" />
+          <StatCard label="Outbound" value={formatBps(summary.total_out_bps)} accent="text-cyan" />
           <StatCard label="Critical Events" value={data?.event_summary?.critical ?? 0} accent="text-status-down" />
         </div>
       </div>
 
-      <div className="bg-ink-900 border border-ink-700 rounded-lg p-5 mb-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-mist-50 font-medium">Bandwidth</h2>
-          <span className="text-[11px] font-mono text-mist-400 uppercase tracking-wider">Live · Real SNMP data</span>
+      <div className="bg-ink-900 border border-ink-700 rounded mb-4">
+        <CardHead>
+          <div className="flex items-center justify-between pb-4">
+            <h2 className="font-display text-mist-50 font-medium">Bandwidth</h2>
+            <span className="text-[11px] font-mono text-mist-400 uppercase tracking-wider">Live · Real SNMP data</span>
+          </div>
+        </CardHead>
+        <div className="px-5 pb-5">
+          {bandwidth.length > 0 ? (
+            <BandwidthChart data={bandwidth} />
+          ) : (
+            <p className="text-mist-400 text-sm py-8 text-center">No bandwidth history yet.</p>
+          )}
         </div>
-        {bandwidth.length > 0 ? (
-          <BandwidthChart data={bandwidth} />
-        ) : (
-          <p className="text-mist-400 text-sm py-8 text-center">No bandwidth history yet.</p>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-ink-700">
-            <h2 className="font-display text-mist-50 font-medium">Devices</h2>
-          </div>
-          <div className="divide-y divide-ink-700">
+        <div className="lg:col-span-2 bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium pb-3">Devices</h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
             {devices.length === 0 && (
               <p className="px-5 py-6 text-mist-400 text-sm">No devices yet.</p>
             )}
@@ -218,11 +240,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-ink-700">
-            <h2 className="font-display text-mist-50 font-medium">Recent events</h2>
-          </div>
-          <div className="divide-y divide-ink-700 max-h-96 overflow-y-auto">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium pb-3">Recent events</h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700 max-h-96 overflow-y-auto">
             {events.length === 0 && (
               <p className="px-5 py-6 text-mist-400 text-sm">No events yet.</p>
             )}
