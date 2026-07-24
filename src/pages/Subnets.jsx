@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 
 export default function Subnets() {
@@ -34,8 +35,11 @@ export default function Subnets() {
       {error && <p className="text-status-down font-mono text-sm">{error}</p>}
 
       {!loading && !error && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">All subnets</h2>
+          </CardHead>
+          <table className="w-full text-sm border-t border-ink-700">
             <thead>
               <tr className="border-b border-ink-700 text-left">
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">CIDR</th>
