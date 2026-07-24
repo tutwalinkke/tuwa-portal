@@ -319,11 +319,11 @@ export default function Topology() {
             <h2 className="font-display text-mist-50 font-medium">{selectedDevice.name}</h2>
             <button onClick={() => setSelectedDevice(null)} className="text-mist-400 hover:text-mist-50 text-sm">Close</button>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><span className="text-mist-400 text-xs uppercase block">Type</span>{selectedDevice.type}</div>
-            <div><span className="text-mist-400 text-xs uppercase block">Status</span>{selectedDevice.status}</div>
-            <div><span className="text-mist-400 text-xs uppercase block">IP Address</span><span className="font-mono">{selectedDevice.ip_address}</span></div>
-            {selectedDevice.site && <div><span className="text-mist-400 text-xs uppercase block">Site</span>{selectedDevice.site}</div>}
+          <div className="grid grid-cols-2 gap-3 text-sm text-mist-50">
+            <div><span className="text-mist-400 text-xs uppercase block mb-0.5">Type</span>{selectedDevice.type}</div>
+            <div><span className="text-mist-400 text-xs uppercase block mb-0.5">Status</span>{selectedDevice.status}</div>
+            <div><span className="text-mist-400 text-xs uppercase block mb-0.5">IP Address</span><span className="font-mono">{selectedDevice.ip_address}</span></div>
+            {selectedDevice.site && <div><span className="text-mist-400 text-xs uppercase block mb-0.5">Site</span>{selectedDevice.site}</div>}
           </div>
         </div>
       )}
