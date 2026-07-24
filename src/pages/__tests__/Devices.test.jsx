@@ -31,6 +31,20 @@ const sampleDevice = {
   status: 'up',
   site: 'Main POP',
   wireguard_ip: null,
+  cpu_percent: null,
+  memory_percent: null,
+};
+
+const monitoredDevice = {
+  id: 2,
+  name: 'Monitored Router',
+  ip_address: '10.0.0.2',
+  type: 'router',
+  status: 'up',
+  site: 'Main POP',
+  wireguard_ip: '10.20.0.5',
+  cpu_percent: 42,
+  memory_percent: 88,
 };
 
 describe('Devices', () => {
@@ -188,5 +202,39 @@ describe('Devices', () => {
     await waitFor(() => {
       expect(screen.getByText(/tuwatest.*connected successfully/)).toBeInTheDocument();
     });
+  });
+
+  it('shows real CPU and memory readouts for a device that has been polled', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [monitoredDevice] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitored Router')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('42%')).toBeInTheDocument();
+    expect(screen.getByText('88%')).toBeInTheDocument();
+  });
+
+  it('hides the CPU/memory readout for a device that has never been polled', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [sampleDevice] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('Core Router')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('CPU')).not.toBeInTheDocument();
+    expect(screen.queryByText('Memory')).not.toBeInTheDocument();
   });
 });

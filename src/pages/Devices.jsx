@@ -281,22 +281,40 @@ export default function Devices() {
             {devices.length === 0 && (
               <p className="px-5 py-8 text-center text-mist-400">No devices yet. Add one to get started.</p>
             )}
-            {devices.map((device) => (
-              <div key={device.id} className="px-5 py-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <StatusBadge status={device.status} />
-                    <span className="text-mist-50 text-sm font-medium">{device.name}</span>
-                    <span className="text-mist-400 text-xs uppercase font-mono">{device.type}</span>
+            {devices.map((device) => {
+              const hasResourceData = device.cpu_percent !== null && device.cpu_percent !== undefined;
+              const cpuColor = device.cpu_percent >= 90 ? 'text-status-down' : device.cpu_percent >= 70 ? 'text-status-warn' : 'text-mist-200';
+              const memColor = device.memory_percent >= 90 ? 'text-status-down' : device.memory_percent >= 70 ? 'text-status-warn' : 'text-mist-200';
+
+              return (
+                <div key={device.id} className="px-5 py-4 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <StatusBadge status={device.status} />
+                      <span className="text-mist-50 text-sm font-medium">{device.name}</span>
+                      <span className="text-mist-400 text-xs uppercase font-mono">{device.type}</span>
+                    </div>
+                    <p className="text-mist-400 text-xs font-mono">
+                      {device.ip_address}
+                      {device.wireguard_ip && ` · WireGuard: ${device.wireguard_ip}`}
+                      {device.site && ` · ${device.site}`}
+                    </p>
                   </div>
-                  <p className="text-mist-400 text-xs font-mono">
-                    {device.ip_address}
-                    {device.wireguard_ip && ` · WireGuard: ${device.wireguard_ip}`}
-                    {device.site && ` · ${device.site}`}
-                  </p>
+                  {hasResourceData && (
+                    <div className="flex items-center gap-4 text-xs font-mono shrink-0">
+                      <div className="text-right">
+                        <span className="text-mist-400 uppercase block text-[10px]">CPU</span>
+                        <span className={cpuColor}>{device.cpu_percent}%</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-mist-400 uppercase block text-[10px]">Memory</span>
+                        <span className={memColor}>{device.memory_percent}%</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
