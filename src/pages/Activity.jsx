@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { identityApi, nocApi } from '../lib/api';
 
 function SourceBadge({ source }) {
@@ -72,8 +73,11 @@ export default function Activity() {
       {error && <p className="text-status-down font-mono text-sm">{error}</p>}
 
       {!loading && !error && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="divide-y divide-ink-700">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">Recent activity</h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
             {activities.length === 0 && (
               <p className="px-5 py-8 text-center text-mist-400">No activity recorded yet.</p>
             )}
