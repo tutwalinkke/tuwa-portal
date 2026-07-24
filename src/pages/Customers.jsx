@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 
 function StatusBadge({ status }) {
@@ -68,14 +69,14 @@ export default function Customers() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-signal hover:bg-signal-dim text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+          className="bg-signal hover:bg-signal-dim text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add Customer'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-ink-900 border border-ink-700 rounded-lg p-5 mb-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-ink-900 border border-ink-700 rounded p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="customer-name" className="block text-xs uppercase tracking-wide text-mist-400 mb-1.5">Name</label>
@@ -122,7 +123,7 @@ export default function Customers() {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+            className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
           >
             {submitting ? 'Saving…' : 'Save Customer'}
           </button>
@@ -133,8 +134,11 @@ export default function Customers() {
       {error && <p className="text-status-down font-mono text-sm">{error}</p>}
 
       {!loading && !error && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">All customers</h2>
+          </CardHead>
+          <table className="w-full text-sm border-t border-ink-700">
             <thead>
               <tr className="border-b border-ink-700 text-left">
                 <th className="px-5 py-3 text-mist-400 font-medium text-xs uppercase tracking-wide">Name</th>
