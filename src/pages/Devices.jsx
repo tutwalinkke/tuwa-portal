@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 import axios from 'axios';
 
@@ -172,7 +173,7 @@ export default function Devices() {
         </div>
         <button
           onClick={() => setShowProvisionPanel(true)}
-          className="bg-signal hover:bg-signal-dim text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+          className="bg-signal hover:bg-signal-dim text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
         >
           + Add Device
         </button>
@@ -191,7 +192,7 @@ export default function Devices() {
       )}
 
       {showProvisionPanel && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg p-6 mb-6">
+        <div className="bg-ink-900 border border-ink-700 rounded p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-lg text-mist-50 font-medium">Add a device</h2>
             <button onClick={closeProvisionPanel} className="text-mist-400 hover:text-mist-50 text-sm">Close</button>
@@ -233,7 +234,7 @@ export default function Devices() {
               <button
                 type="submit"
                 disabled={provisioning}
-                className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-ink-950 font-semibold rounded px-4 py-2 text-sm transition-colors"
+                className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-white font-semibold rounded px-4 py-2 text-sm transition-colors"
               >
                 {provisioning ? 'Generating…' : 'Generate Code'}
               </button>
@@ -272,8 +273,11 @@ export default function Devices() {
       {loading && <p className="text-mist-400 font-mono text-sm">Loading…</p>}
 
       {!loading && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="divide-y divide-ink-700">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">All devices</h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
             {devices.length === 0 && (
               <p className="px-5 py-8 text-center text-mist-400">No devices yet. Add one to get started.</p>
             )}
