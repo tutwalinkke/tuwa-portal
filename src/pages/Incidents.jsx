@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 
 function StatusBadge({ status }) {
@@ -113,8 +114,13 @@ export default function Incidents() {
       {loading && <p className="text-mist-400 font-mono text-sm">Loading…</p>}
 
       {!loading && (
-        <div className="bg-ink-900 border border-ink-700 rounded-lg overflow-hidden">
-          <div className="divide-y divide-ink-700">
+        <div className="bg-ink-900 border border-ink-700 rounded overflow-hidden">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">
+              {activeTab ? TABS.find((t) => t.key === activeTab)?.label : 'All'} incidents
+            </h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
             {incidents.length === 0 && (
               <p className="px-5 py-8 text-center text-mist-400">No incidents{activeTab ? ` (${activeTab})` : ''}.</p>
             )}
@@ -138,7 +144,7 @@ export default function Incidents() {
                     <button
                       onClick={() => handleAcknowledge(incident.id)}
                       disabled={actioningId === incident.id}
-                      className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-ink-950 font-semibold rounded px-3 py-1.5 text-xs transition-colors"
+                      className="bg-signal hover:bg-signal-dim disabled:opacity-50 text-white font-semibold rounded px-3 py-1.5 text-xs transition-colors"
                     >
                       Acknowledge
                     </button>
