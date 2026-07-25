@@ -5,6 +5,12 @@ import CardHead from '../components/CardHead';
 import { nocApi } from '../lib/api';
 import axios from 'axios';
 
+function formatBytes(bytes) {
+  if (bytes === null || bytes === undefined) return '—';
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
 const NOC_URL = 'https://noc.tuwalink.com/api/v1';
 
 const STATUS_STYLES = {
@@ -80,6 +86,10 @@ export default function Devices() {
   const [deviceName, setDeviceName] = useState('');
   const [pollStatus, setPollStatus] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [expandedDeviceId, setExpandedDeviceId] = useState(null);
+  const [backups, setBackups] = useState({});
+  const [backupsLoading, setBackupsLoading] = useState({});
+  const [viewingBackup, setViewingBackup] = useState(null);
   const pollIntervalRef = useRef(null);
 
   function load() {
@@ -156,6 +166,34 @@ export default function Devices() {
     setDeviceType('router');
     setDeviceName('');
     load();
+  }
+
+  async function toggleBackups(deviceId) {
+    if (expandedDeviceId === deviceId) {
+      setExpandedDeviceId(null);
+      return;
+    }
+    setExpandedDeviceId(deviceId);
+    if (backups[deviceId]) return;
+
+    setBackupsLoading((prev) => ({ ...prev, [deviceId]: true }));
+    try {
+      const res = await nocApi.configBackups(deviceId);
+      setBackups((prev) => ({ ...prev, [deviceId]: res.data.backups || [] }));
+    } catch {
+      setBackups((prev) => ({ ...prev, [deviceId]: [] }));
+    } finally {
+      setBackupsLoading((prev) => ({ ...prev, [deviceId]: false }));
+    }
+  }
+
+  async function viewBackup(deviceId, backupId) {
+    try {
+      const res = await nocApi.configBackup(deviceId, backupId);
+      setViewingBackup(res.data.backup);
+    } catch {
+      setError('Could not load that backup.');
+    }
   }
 
   const POLL_LABELS = {
@@ -285,36 +323,96 @@ export default function Devices() {
               const hasResourceData = device.cpu_percent !== null && device.cpu_percent !== undefined;
               const cpuColor = device.cpu_percent >= 90 ? 'text-status-down' : device.cpu_percent >= 70 ? 'text-status-warn' : 'text-mist-200';
               const memColor = device.memory_percent >= 90 ? 'text-status-down' : device.memory_percent >= 70 ? 'text-status-warn' : 'text-mist-200';
+              const isExpanded = expandedDeviceId === device.id;
 
               return (
-                <div key={device.id} className="px-5 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <StatusBadge status={device.status} />
-                      <span className="text-mist-50 text-sm font-medium">{device.name}</span>
-                      <span className="text-mist-400 text-xs uppercase font-mono">{device.type}</span>
+                <div key={device.id}>
+                  <div className="px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <StatusBadge status={device.status} />
+                        <span className="text-mist-50 text-sm font-medium">{device.name}</span>
+                        <span className="text-mist-400 text-xs uppercase font-mono">{device.type}</span>
+                      </div>
+                      <p className="text-mist-400 text-xs font-mono">
+                        {device.ip_address}
+                        {device.wireguard_ip && ` · WireGuard: ${device.wireguard_ip}`}
+                        {device.site && ` · ${device.site}`}
+                      </p>
                     </div>
-                    <p className="text-mist-400 text-xs font-mono">
-                      {device.ip_address}
-                      {device.wireguard_ip && ` · WireGuard: ${device.wireguard_ip}`}
-                      {device.site && ` · ${device.site}`}
-                    </p>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {hasResourceData && (
+                        <div className="flex items-center gap-4 text-xs font-mono">
+                          <div className="text-right">
+                            <span className="text-mist-400 uppercase block text-[10px]">CPU</span>
+                            <span className={cpuColor}>{device.cpu_percent}%</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-mist-400 uppercase block text-[10px]">Memory</span>
+                            <span className={memColor}>{device.memory_percent}%</span>
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => toggleBackups(device.id)}
+                        className="text-signal hover:text-signal-dim text-xs font-medium transition-colors"
+                      >
+                        {isExpanded ? 'Hide backups' : 'Backups'}
+                      </button>
+                    </div>
                   </div>
-                  {hasResourceData && (
-                    <div className="flex items-center gap-4 text-xs font-mono shrink-0">
-                      <div className="text-right">
-                        <span className="text-mist-400 uppercase block text-[10px]">CPU</span>
-                        <span className={cpuColor}>{device.cpu_percent}%</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-mist-400 uppercase block text-[10px]">Memory</span>
-                        <span className={memColor}>{device.memory_percent}%</span>
-                      </div>
+                  {isExpanded && (
+                    <div className="px-5 pb-4 bg-ink-950/40">
+                      {backupsLoading[device.id] && (
+                        <p className="text-mist-400 text-xs font-mono py-2">Loading backups…</p>
+                      )}
+                      {!backupsLoading[device.id] && (backups[device.id]?.length ?? 0) === 0 && (
+                        <p className="text-mist-400 text-xs py-2">
+                          No config backups yet. {!device.ssh_backup_user && 'This device has no backup access configured.'}
+                        </p>
+                      )}
+                      {!backupsLoading[device.id] && (backups[device.id]?.length ?? 0) > 0 && (
+                        <div className="space-y-1 py-2">
+                          {backups[device.id].map((b) => (
+                            <div key={b.id} className="flex items-center justify-between text-xs font-mono py-1.5 border-b border-ink-700/50 last:border-0">
+                              <span className="text-mist-200">{new Date(b.taken_at).toLocaleString()}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-mist-400">{formatBytes(b.size_bytes)}</span>
+                                <button
+                                  onClick={() => viewBackup(device.id, b.id)}
+                                  className="text-signal hover:text-signal-dim transition-colors"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {viewingBackup && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setViewingBackup(null)}>
+          <div
+            className="bg-ink-900 border border-ink-700 rounded max-w-3xl w-full max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-3 border-b border-ink-700 flex items-center justify-between">
+              <h2 className="font-display text-mist-50 font-medium text-sm">
+                Config backup — {new Date(viewingBackup.taken_at).toLocaleString()}
+              </h2>
+              <button onClick={() => setViewingBackup(null)} className="text-mist-400 hover:text-mist-50 text-sm">Close</button>
+            </div>
+            <pre className="p-5 overflow-auto text-mist-200 text-xs font-mono whitespace-pre-wrap">
+{viewingBackup.content}
+            </pre>
           </div>
         </div>
       )}

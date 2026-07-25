@@ -62,6 +62,10 @@ export const nocApi = {
 
   devices: () =>
     axios.get(`${NOC_URL}/devices`, { headers: authHeaders() }),
+  configBackups: (deviceId) =>
+    axios.get(`${NOC_URL}/devices/${deviceId}/config-backups`, { headers: authHeaders() }),
+  configBackup: (deviceId, backupId) =>
+    axios.get(`${NOC_URL}/devices/${deviceId}/config-backups/${backupId}`, { headers: authHeaders() }),
 
   billingStatus: () =>
     axios.get(`${NOC_URL}/billing/status`, { headers: authHeaders() }),

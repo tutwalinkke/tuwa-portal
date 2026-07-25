@@ -237,4 +237,86 @@ describe('Devices', () => {
     expect(screen.queryByText('CPU')).not.toBeInTheDocument();
     expect(screen.queryByText('Memory')).not.toBeInTheDocument();
   });
+
+  it('expands to show real config backups when Backups is clicked', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/config-backups')) {
+        return Promise.resolve({
+          data: { backups: [{ id: 1, size_bytes: 1437, taken_at: '2026-07-25T10:28:52.000000Z' }] },
+        });
+      }
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [monitoredDevice] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitored Router')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Backups'));
+
+    await waitFor(() => {
+      expect(screen.getByText('1.4 KB')).toBeInTheDocument();
+    });
+  });
+
+  it('shows the real full content when a backup is viewed', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/config-backups/1')) {
+        return Promise.resolve({
+          data: { backup: { id: 1, content: '# real router export content', taken_at: '2026-07-25T10:28:52.000000Z' } },
+        });
+      }
+      if (url.includes('/config-backups')) {
+        return Promise.resolve({
+          data: { backups: [{ id: 1, size_bytes: 1437, taken_at: '2026-07-25T10:28:52.000000Z' }] },
+        });
+      }
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [monitoredDevice] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('Monitored Router')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Backups'));
+
+    await waitFor(() => {
+      expect(screen.getByText('1.4 KB')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('View'));
+
+    await waitFor(() => {
+      expect(screen.getByText('# real router export content')).toBeInTheDocument();
+    });
+  });
+
+  it('shows a real empty state for a device with no backups yet', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/config-backups')) return Promise.resolve({ data: { backups: [] } });
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [sampleDevice] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('Core Router')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Backups'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/No config backups yet/)).toBeInTheDocument();
+    });
+  });
 });
