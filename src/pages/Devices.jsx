@@ -90,7 +90,35 @@ export default function Devices() {
   const [backups, setBackups] = useState({});
   const [backupsLoading, setBackupsLoading] = useState({});
   const [viewingBackup, setViewingBackup] = useState(null);
+  const [discovered, setDiscovered] = useState([]);
+  const [addingDiscoveredId, setAddingDiscoveredId] = useState(null);
+  const [addForm, setAddForm] = useState({ name: '', type: 'router' });
   const pollIntervalRef = useRef(null);
+
+  function loadDiscovered() {
+    nocApi
+      .discoveredDevices()
+      .then((res) => setDiscovered(res.data.discovered_devices || []))
+      .catch(() => {});
+  }
+
+  async function ignoreDiscovered(id) {
+    await nocApi.ignoreDiscovered(id);
+    setDiscovered((prev) => prev.filter((d) => d.id !== id));
+  }
+
+  function startAddDiscovered(item) {
+    setAddingDiscoveredId(item.id);
+    setAddForm({ name: '', type: 'router' });
+  }
+
+  async function submitAddDiscovered(id) {
+    if (!addForm.name.trim()) return;
+    await nocApi.addDiscovered(id, addForm);
+    setDiscovered((prev) => prev.filter((d) => d.id !== id));
+    setAddingDiscoveredId(null);
+    load();
+  }
 
   function load() {
     setLoading(true);
@@ -109,6 +137,7 @@ export default function Devices() {
 
   useEffect(() => {
     load();
+    loadDiscovered();
   }, [navigate]);
 
   useEffect(() => {
@@ -305,6 +334,83 @@ export default function Devices() {
               ✓ Connected!
             </div>
           )}
+        </div>
+      )}
+
+      {discovered.length > 0 && (
+        <div className="bg-ink-900 border border-signal-dim/40 rounded overflow-hidden mb-6">
+          <CardHead>
+            <h2 className="font-display text-mist-50 font-medium text-sm pb-3">
+              Discovered on your network ({discovered.length})
+            </h2>
+          </CardHead>
+          <div className="divide-y divide-ink-700 border-t border-ink-700">
+            {discovered.map((item) => (
+              <div key={item.id} className="px-5 py-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <p className="text-mist-50 text-sm font-medium font-mono">{item.ip_address}</p>
+                    <p className="text-mist-400 text-xs font-mono">
+                      {item.mac_address}
+                      {item.interface_name && ` · ${item.interface_name}`}
+                      {item.source_device && ` · via ${item.source_device.name}`}
+                    </p>
+                  </div>
+                  {addingDiscoveredId !== item.id && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => startAddDiscovered(item)}
+                        className="text-signal hover:text-signal-dim text-xs font-medium transition-colors"
+                      >
+                        Add as device
+                      </button>
+                      <button
+                        onClick={() => ignoreDiscovered(item.id)}
+                        className="text-mist-400 hover:text-mist-200 text-xs font-medium transition-colors"
+                      >
+                        Ignore
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {addingDiscoveredId === item.id && (
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      placeholder="Device name"
+                      value={addForm.name}
+                      onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
+                      className="bg-ink-800 border border-ink-700 rounded px-3 py-1.5 text-sm text-mist-50 placeholder-mist-500"
+                      autoFocus
+                    />
+                    <select
+                      value={addForm.type}
+                      onChange={(e) => setAddForm((f) => ({ ...f, type: e.target.value }))}
+                      className="bg-ink-800 border border-ink-700 rounded px-3 py-1.5 text-sm text-mist-50"
+                    >
+                      <option value="router">Router</option>
+                      <option value="switch">Switch</option>
+                      <option value="access_point">Access point</option>
+                      <option value="server">Server</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <button
+                      onClick={() => submitAddDiscovered(item.id)}
+                      className="text-signal hover:text-signal-dim text-xs font-medium transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setAddingDiscoveredId(null)}
+                      className="text-mist-400 hover:text-mist-200 text-xs font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

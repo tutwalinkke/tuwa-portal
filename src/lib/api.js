@@ -66,6 +66,12 @@ export const nocApi = {
     axios.get(`${NOC_URL}/devices/${deviceId}/config-backups`, { headers: authHeaders() }),
   configBackup: (deviceId, backupId) =>
     axios.get(`${NOC_URL}/devices/${deviceId}/config-backups/${backupId}`, { headers: authHeaders() }),
+  discoveredDevices: () =>
+    axios.get(`${NOC_URL}/discovered-devices`, { headers: authHeaders() }),
+  ignoreDiscovered: (id) =>
+    axios.post(`${NOC_URL}/discovered-devices/${id}/ignore`, {}, { headers: authHeaders() }),
+  addDiscovered: (id, data) =>
+    axios.post(`${NOC_URL}/discovered-devices/${id}/add`, data, { headers: authHeaders() }),
 
   billingStatus: () =>
     axios.get(`${NOC_URL}/billing/status`, { headers: authHeaders() }),

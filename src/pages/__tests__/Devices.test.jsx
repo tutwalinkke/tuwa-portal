@@ -319,4 +319,114 @@ describe('Devices', () => {
       expect(screen.getByText(/No config backups yet/)).toBeInTheDocument();
     });
   });
+
+  it('shows real discovered devices with Add/Ignore actions', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/discovered-devices')) {
+        return Promise.resolve({
+          data: {
+            discovered_devices: [
+              {
+                id: 1,
+                ip_address: '192.168.100.90',
+                mac_address: '6C:5A:B0:F4:ED:23',
+                interface_name: 'bridgeLocal',
+                source_device: { id: 16, name: 'tuwatestrouterkabete1' },
+              },
+            ],
+          },
+        });
+      }
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Discovered on your network/)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('192.168.100.90')).toBeInTheDocument();
+    expect(screen.getByText(/6C:5A:B0:F4:ED:23/)).toBeInTheDocument();
+    expect(screen.getByText(/via tuwatestrouterkabete1/)).toBeInTheDocument();
+    expect(screen.getByText('Add as device')).toBeInTheDocument();
+    expect(screen.getByText('Ignore')).toBeInTheDocument();
+  });
+
+  it('ignoring a discovered device removes it from the list', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/discovered-devices')) {
+        return Promise.resolve({
+          data: { discovered_devices: [{ id: 1, ip_address: '192.168.100.90', mac_address: 'AA:AA:AA:AA:AA:AA' }] },
+        });
+      }
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+    axios.post.mockResolvedValue({ data: {} });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('192.168.100.90')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Ignore'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('192.168.100.90')).not.toBeInTheDocument();
+    });
+  });
+
+  it('adding a discovered device submits the real form data', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/discovered-devices')) {
+        return Promise.resolve({
+          data: { discovered_devices: [{ id: 1, ip_address: '192.168.100.90', mac_address: 'AA:AA:AA:AA:AA:AA' }] },
+        });
+      }
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+    axios.post.mockResolvedValue({ data: {} });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('192.168.100.90')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Add as device'));
+    fireEvent.change(screen.getByPlaceholderText('Device name'), { target: { value: 'TP-Link Router' } });
+    fireEvent.click(screen.getByText('Confirm'));
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/discovered-devices/1/add'),
+        expect.objectContaining({ name: 'TP-Link Router' }),
+        expect.anything()
+      );
+    });
+  });
+
+  it('shows no discovered-devices section when there are none', async () => {
+    axios.get.mockImplementation((url) => {
+      if (url.includes('/me')) return mockMe();
+      if (url.includes('/discovered-devices')) return Promise.resolve({ data: { discovered_devices: [] } });
+      if (url.includes('/devices')) return Promise.resolve({ data: { devices: [] } });
+      return Promise.reject(new Error('unexpected URL: ' + url));
+    });
+
+    renderDevices();
+
+    await waitFor(() => {
+      expect(screen.getByText('No devices yet. Add one to get started.')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Discovered on your network/)).not.toBeInTheDocument();
+  });
 });
